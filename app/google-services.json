@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1097129030208",
+    "firebase_url": "https://cybersprint-tfg-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "cybersprint-tfg",
+    "storage_bucket": "cybersprint-tfg.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1097129030208:android:e54f615342d735f24b25a5",
+        "android_client_info": {
+          "package_name": "com.example.cybersprint"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJtjs6EaNwW1xexlo-jh20xVNkxt-Y7XE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
