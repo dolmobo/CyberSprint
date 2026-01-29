@@ -3,76 +3,82 @@ package com.example.cybersprint.ui;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.Toast;
-import androidx.activity.EdgeToEdge;
+import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
-
-import com.example.cybersprint.data.GestorDatos;
-import com.google.firebase.auth.FirebaseAuth; // <--- 1. Importante: Importar Firebase
 
 import com.example.cybersprint.R;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class MainActivity extends AppCompatActivity {
+
+    private TextView txtStats;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+
+        // 1. CARGAMOS EL DISEÑO XML QUE ACABAMOS DE HACER
         setContentView(R.layout.activity_main);
 
-        // Ponemos el modo pantalla completa (juego)
-        ocultarBarrasSistema();
+        // 2. Buscamos los elementos
+        Button btnJugar = findViewById(R.id.btnJugar);
+        Button btnSalir = findViewById(R.id.btnSalir);
+        txtStats = findViewById(R.id.txtStats);
 
-        // 1. Buscamos los botones por su ID
-        Button btnPlay = findViewById(R.id.btnPlay);
-        Button btnStore = findViewById(R.id.btnStore);
-        Button btnSupport = findViewById(R.id.btnSupport);
-        Button btnLogout = findViewById(R.id.btnLogout); // <--- Asegúrate de que este ID existe en tu XML
-
-        // 2. Acción JUGAR: Abre la pantalla del juego
-        btnPlay.setOnClickListener(v -> {
+        // 3. Programamos los botones
+        btnJugar.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, GameActivity.class);
             startActivity(intent);
         });
 
-        // 3. Acción TIENDA: Mensaje temporal
-        btnStore.setOnClickListener(v ->
-                Toast.makeText(this, "Tienda: Próximamente", Toast.LENGTH_SHORT).show()
-        );
-
-        // 4. Acción APOYAR: Mensaje temporal
-        btnSupport.setOnClickListener(v ->
-                Toast.makeText(this, "¡Gracias por apoyar!", Toast.LENGTH_SHORT).show()
-        );
-
-        // 5. NUEVO: Acción SALIR (Firebase)
-        btnLogout.setOnClickListener(v -> {
-            // A. Le decimos a Firebase que cierre la sesión
+        btnSalir.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
-
-            GestorDatos.reset();
-
-            Toast.makeText(this, "Sesión cerrada", Toast.LENGTH_SHORT).show();
-
-            // B. Volvemos al Login
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivity(intent);
-
-            // C. Cerramos esta pantalla
             finish();
         });
+
+        // 4. Cargamos los datos
+        cargarDatosUsuario();
     }
 
-    // Método para ocultar la barra de notificaciones y botones virtuales
-    private void ocultarBarrasSistema() {
-        WindowInsetsControllerCompat windowInsetsController =
-                WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-        windowInsetsController.setSystemBarsBehavior(
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        );
-        windowInsetsController.hide(WindowInsetsCompat.Type.systemBars());
+    private void cargarDatosUsuario() {
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference("jugadores").child(uid);
+
+            ref.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot snapshot) {
+                    long record = 0;
+                    long monedas = 0;
+
+                    if (snapshot.exists()) {
+                        try {
+                            if (snapshot.child("record").exists())
+                                record = Long.parseLong(snapshot.child("record").getValue().toString());
+                            if (snapshot.child("monedas").exists())
+                                monedas = Long.parseLong(snapshot.child("monedas").getValue().toString());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    // Actualizamos el texto del pie de página
+                    txtStats.setText("RÉCORD: " + record + "   |   MONEDAS: " + monedas);
+                }
+
+                @Override
+                public void onCancelled(DatabaseError error) {
+                    txtStats.setText("Error al cargar datos");
+                }
+            });
+        }
     }
+
 }

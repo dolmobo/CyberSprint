@@ -1,6 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
-</androidx.constraintlayout.widget.ConstraintLayout>
+    android:background="#000000">
+
+    <FrameLayout
+        android:id="@+id/gameContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <RelativeLayout
+        android:id="@+id/layoutGameOver"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="320dp"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:gravity="center">
+
+            <TextView
+                android:text="SYSTEM FAILURE"
+                android:textColor="#FF0055"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:shadowColor="#FF0055"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="20"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:id="@+id/txtPuntosOver"
+                android:layout_marginTop="20dp"
+                android:text="Puntos: 0"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:id="@+id/txtSaltosOver"
+                android:layout_marginTop="5dp"
+                android:text="Saltos: 0"
+                android:textColor="#00E5FF"
+                android:textSize="18sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/btnReintentar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:text="REINICIAR"
+                android:backgroundTint="#00E5FF"
+                android:textColor="#000000"
+                android:textStyle="bold"/>
+
+            <Button
+                android:id="@+id/btnMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="SALIR"
+                android:backgroundTint="#333333"
+                android:textColor="#FFFFFF"/>
+        </LinearLayout>
+    </RelativeLayout>
+</FrameLayout>

@@ -118,4 +118,44 @@ public class GestorDatos {
             return "anonimo_error";
         }
     }
+
+    // --- NUEVO MÉTODO PARA GUARDAR SALTOS ---
+    public void guardarEstadisticas(int saltosDeEstaPartida) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (user != null) {
+            String uid = user.getUid();
+            // Referencia a la base de datos: jugadores -> UID
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference("jugadores").child(uid);
+
+            // Leemos los saltos que ya tenía para sumarle los nuevos
+            ref.child("saltos").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    long saltosTotales = 0;
+
+                    // Si ya había saltos guardados, los recuperamos
+                    if (snapshot.exists() && snapshot.getValue() != null) {
+                        try {
+                            // Convertimos a número (seguro)
+                            saltosTotales = Long.parseLong(snapshot.getValue().toString());
+                        } catch (Exception e) {
+                            saltosTotales = 0;
+                        }
+                    }
+
+                    // Sumamos los de ahora
+                    long nuevosTotales = saltosTotales + saltosDeEstaPartida;
+
+                    // Guardamos el nuevo total en la nube
+                    ref.child("saltos").setValue(nuevosTotales);
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    // Si falla, no hacemos nada
+                }
+            });
+        }
+    }
 }
