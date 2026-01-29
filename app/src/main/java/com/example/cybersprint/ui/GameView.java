@@ -45,33 +45,26 @@ public class GameView extends SurfaceView implements Runnable {
     private Partida partida;
     private List<Obstaculo> listaObstaculos;
 
-    // Fondo
     private Bitmap fondo1, fondo2;
     private int fondoX1, fondoX2;
     private int anchoPantalla, altoPantalla;
 
-    // Lógica
     private int tiempoSpawn = 0;
     private int saltosPartida = 0;
     private long mejorRecord = 0;
-
     private int proximoSpawn = 0;
     private Random generadorRandom;
 
-    // Botones
     private RectF botonReintentar;
     private RectF botonMenu;
-
-    // Fuente
     private Typeface fuenteCyber;
 
-    public GameView(Context context) {
+    public GameView(Context context, int idSkinSeleccionada) {
         super(context);
         holder = getHolder();
         paint = new Paint();
         generadorRandom = new Random();
 
-        // Cargar fuente
         try {
             fuenteCyber = ResourcesCompat.getFont(context, R.font.font_bold);
             paint.setTypeface(fuenteCyber);
@@ -79,11 +72,9 @@ public class GameView extends SurfaceView implements Runnable {
             paint.setTypeface(Typeface.DEFAULT_BOLD);
         }
 
-        // Pantalla
         anchoPantalla = getResources().getDisplayMetrics().widthPixels;
         altoPantalla = getResources().getDisplayMetrics().heightPixels;
 
-        // Botones
         int centroX = anchoPantalla / 2;
         int centroY = altoPantalla / 2;
         int anchoBoton = 250;
@@ -93,7 +84,6 @@ public class GameView extends SurfaceView implements Runnable {
         botonReintentar = new RectF(centroX - anchoBoton - separacion, centroY + 150, centroX - separacion, centroY + 150 + altoBoton);
         botonMenu = new RectF(centroX + separacion, centroY + 150, centroX + anchoBoton + separacion, centroY + 150 + altoBoton);
 
-        // Fondo
         Bitmap fondoOriginal = BitmapFactory.decodeResource(getResources(), R.drawable.fondo_cyber);
         if (fondoOriginal == null) {
             fondoOriginal = Bitmap.createBitmap(anchoPantalla, altoPantalla, Bitmap.Config.ARGB_8888);
@@ -104,13 +94,20 @@ public class GameView extends SurfaceView implements Runnable {
         fondoX1 = 0;
         fondoX2 = anchoPantalla;
 
-        // Juego
-        jugador = new Jugador(context, 100, 850);
+        // INICIALIZAR JUGADOR
+        jugador = new Jugador(context, 100, 850, idSkinSeleccionada);
         partida = new Partida(jugador);
         listaObstaculos = new ArrayList<>();
 
         calcularProximoSpawn();
         cargarRecordDesdeFirebase();
+    }
+
+    // --- MÉTODO CLAVE PARA ACTUALIZAR SKIN SIN REINICIAR ---
+    public void actualizarSkinJugador(int nuevaSkinId) {
+        if (jugador != null) {
+            jugador.cargarSkin(nuevaSkinId);
+        }
     }
 
     @Override
@@ -126,16 +123,15 @@ public class GameView extends SurfaceView implements Runnable {
         if (partida.gameState.equals("JUGANDO")) {
             partida.actualizarDificultad();
 
-            // Fondo
             int velocidadFondo = (int) (partida.velocidadObstaculo * 0.7);
             fondoX1 -= velocidadFondo;
             fondoX2 -= velocidadFondo;
             if (fondoX1 + anchoPantalla < 0) fondoX1 = fondoX2 + anchoPantalla;
             if (fondoX2 + anchoPantalla < 0) fondoX2 = fondoX1 + anchoPantalla;
 
-            // Jugador
             jugador.velocidadY += 2;
             jugador.y += jugador.velocidadY;
+
             if (jugador.y > 850) {
                 jugador.y = 850;
                 jugador.velocidadY = 0;
@@ -143,24 +139,12 @@ public class GameView extends SurfaceView implements Runnable {
                 jugador.recargarSaltos();
             }
 
-            // --- GENERADOR DE OBSTÁCULOS (NUEVO) ---
             tiempoSpawn++;
-
             if (tiempoSpawn > proximoSpawn) {
+                int tipoObstaculo = 1;
+                if (generadorRandom.nextInt(100) < 40) tipoObstaculo = 2;
 
-                // 1. Decidir el TIPO de obstáculo
-                // 40% de probabilidad de que salga uno ALTO (Doble salto)
-                // 60% de probabilidad de que salga uno BAJO (Salto simple)
-                int tipoObstaculo = 1; // Por defecto bajo
-
-                if (generadorRandom.nextInt(100) < 40) {
-                    tipoObstaculo = 2; // ¡Toca doble salto!
-                }
-
-                // Creamos el obstáculo pasándole el tipo
-                // (El Y base es 850, la clase Obstaculo calculará su altura real)
                 listaObstaculos.add(new Obstaculo(getContext(), anchoPantalla, 850, tipoObstaculo));
-
                 tiempoSpawn = 0;
                 calcularProximoSpawn();
             }
@@ -168,7 +152,7 @@ public class GameView extends SurfaceView implements Runnable {
             Iterator<Obstaculo> iterator = listaObstaculos.iterator();
             while (iterator.hasNext()) {
                 Obstaculo obs = iterator.next();
-                obs.x -= partida.velocidadObstaculo;
+                obs.update(partida.velocidadObstaculo);
 
                 if (obs.x + obs.ancho < 0) {
                     iterator.remove();
@@ -189,7 +173,6 @@ public class GameView extends SurfaceView implements Runnable {
     private void calcularProximoSpawn() {
         int baseFrecuencia = 100 - (int) partida.velocidadObstaculo;
         if (baseFrecuencia < 35) baseFrecuencia = 35;
-        // Más distancia entre obstáculos si sale uno alto, para dar tiempo a caer
         int caos = generadorRandom.nextInt(60) - 10;
         proximoSpawn = baseFrecuencia + caos;
     }
@@ -197,8 +180,6 @@ public class GameView extends SurfaceView implements Runnable {
     private void draw() {
         if (holder.getSurface().isValid()) {
             Canvas canvas = holder.lockCanvas();
-
-            // Dibujar Juego
             canvas.drawBitmap(fondo1, fondoX1, 0, null);
             canvas.drawBitmap(fondo2, fondoX2, 0, null);
             jugador.draw(canvas, paint);
@@ -206,7 +187,6 @@ public class GameView extends SurfaceView implements Runnable {
                 obs.draw(canvas, paint);
             }
 
-            // HUD
             paint.setColor(Color.WHITE);
             paint.setTextSize(50);
             paint.setTextAlign(Paint.Align.LEFT);
@@ -214,13 +194,11 @@ public class GameView extends SurfaceView implements Runnable {
             canvas.drawText("Puntos: " + jugador.puntuacion, 50, 100, paint);
             paint.setShadowLayer(0, 0, 0, 0);
 
-            // Menús
             if (partida.gameState.equals("GAMEOVER")) {
                 drawGameOver(canvas);
             } else if (partida.gameState.equals("PAUSA")) {
                 drawStartScreen(canvas);
             }
-
             holder.unlockCanvasAndPost(canvas);
         }
     }
@@ -228,7 +206,6 @@ public class GameView extends SurfaceView implements Runnable {
     private void drawStartScreen(Canvas canvas) {
         paint.setColor(Color.argb(150, 0, 0, 0));
         canvas.drawRect(0, 0, anchoPantalla, altoPantalla, paint);
-
         paint.setColor(Color.CYAN);
         paint.setTextSize(80);
         paint.setTextAlign(Paint.Align.CENTER);
@@ -239,36 +216,29 @@ public class GameView extends SurfaceView implements Runnable {
     private void drawGameOver(Canvas canvas) {
         int centroX = anchoPantalla / 2;
         int centroY = altoPantalla / 2;
-
         paint.setColor(Color.argb(240, 10, 10, 20));
         canvas.drawRect(0, 0, anchoPantalla, altoPantalla, paint);
-
         paint.setTextAlign(Paint.Align.CENTER);
-
         paint.setColor(Color.RED);
         paint.setTextSize(120);
         paint.setFakeBoldText(true);
         paint.setShadowLayer(20, 0, 0, Color.RED);
         canvas.drawText("GAME OVER", centroX, centroY - 200, paint);
         paint.setShadowLayer(0, 0, 0, 0);
-
         paint.setColor(Color.WHITE);
         paint.setTextSize(60);
+        paint.setFakeBoldText(false);
         canvas.drawText("Puntos: " + jugador.puntuacion, centroX, centroY - 100, paint);
-
         paint.setColor(Color.YELLOW);
         paint.setTextSize(50);
         canvas.drawText("Récord: " + mejorRecord, centroX, centroY - 30, paint);
-
         paint.setColor(Color.CYAN);
         canvas.drawText("Saltos: " + saltosPartida, centroX, centroY + 40, paint);
-
         paint.setColor(Color.rgb(0, 229, 255));
         canvas.drawRoundRect(botonReintentar, 20, 20, paint);
         paint.setColor(Color.BLACK);
         paint.setTextSize(40);
         canvas.drawText("JUGAR", botonReintentar.centerX(), botonReintentar.centerY() + 15, paint);
-
         paint.setColor(Color.rgb(200, 50, 50));
         canvas.drawRoundRect(botonMenu, 20, 20, paint);
         paint.setColor(Color.WHITE);
@@ -280,7 +250,6 @@ public class GameView extends SurfaceView implements Runnable {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             float x = event.getX();
             float y = event.getY();
-
             if (partida.gameState.equals("JUGANDO")) {
                 if (partida.jump()) saltosPartida++;
             }
@@ -288,12 +257,8 @@ public class GameView extends SurfaceView implements Runnable {
                 partida.start();
             }
             else if (partida.gameState.equals("GAMEOVER")) {
-                if (botonReintentar.contains(x, y)) {
-                    reiniciarPartida();
-                }
-                else if (botonMenu.contains(x, y)) {
-                    salirAlMenu();
-                }
+                if (botonReintentar.contains(x, y)) reiniciarPartida();
+                else if (botonMenu.contains(x, y)) salirAlMenu();
             }
         }
         return super.onTouchEvent(event);
@@ -305,15 +270,10 @@ public class GameView extends SurfaceView implements Runnable {
         jugador.puntuacion = 0;
         jugador.enSuelo = true;
         jugador.recargarSaltos();
-
         saltosPartida = 0;
         tiempoSpawn = 0;
         listaObstaculos.clear();
-
-        // --- CAMBIO AQUÍ: ---
-        // Asegúrate de que esto coincide con la velocidad inicial de Partida.java
         partida.velocidadObstaculo = 25.0;
-
         partida.start();
         calcularProximoSpawn();
         cargarRecordDesdeFirebase();
@@ -348,8 +308,6 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
-
-
     private void control() {
         try { Thread.sleep(17); }
         catch (InterruptedException e) { e.printStackTrace(); }
@@ -357,8 +315,11 @@ public class GameView extends SurfaceView implements Runnable {
 
     public void pause() {
         isPlaying = false;
-        try { thread.join(); }
-        catch (InterruptedException e) { e.printStackTrace(); }
+        try {
+            if (thread != null) { // Protección anti-crash
+                thread.join();
+            }
+        } catch (InterruptedException e) { e.printStackTrace(); }
     }
 
     public void resume() {

@@ -13,44 +13,52 @@ public class Jugador {
     public int velocidadY;
     public int ancho, alto;
     public int puntuacion;
-
     public boolean enSuelo;
-
-    // --- NUEVO: CONTADOR DE SALTOS ---
     public int saltosDisponibles;
 
     private Bitmap sprite;
+    private Context context; // Guardamos el contexto para cargar recursos después
 
-    public Jugador(Context context, int startX, int startY) {
+    public Jugador(Context context, int startX, int startY, int idSkinEquipada) {
+        this.context = context;
         this.x = startX;
         this.y = startY;
         this.velocidadY = 0;
         this.puntuacion = 0;
-        this.ancho = 100;
+        this.ancho = 75;
         this.alto = 200;
         this.enSuelo = true;
-
-        // Empezamos con 2 saltos
         this.saltosDisponibles = 2;
 
-        Bitmap original = BitmapFactory.decodeResource(context.getResources(), R.drawable.prueba);
-        // Si la imagen falla, evitamos el crash (aunque deberías tenerla)
+        // Cargar la skin inicial
+        cargarSkin(idSkinEquipada);
+    }
+
+    // --- NUEVO MÉTODO PARA CAMBIAR SKIN EN CALIENTE ---
+    public void cargarSkin(int idSkin) {
+        int resourceId;
+        if (idSkin == 2) {
+            resourceId = R.drawable.skin_2;
+        } else if (idSkin == 3) {
+            resourceId = R.drawable.skin_3;
+        } else {
+            resourceId = R.drawable.skin_default;
+        }
+
+        Bitmap original = BitmapFactory.decodeResource(context.getResources(), resourceId);
         if (original != null) {
             sprite = Bitmap.createScaledBitmap(original, ancho, alto, false);
         }
     }
 
     public void setSaltar() {
-        this.velocidadY = -30; // Fuerza del salto
+        this.velocidadY = -30;
         this.enSuelo = false;
-
-        // --- RESTAMOS UN SALTO ---
         if (this.saltosDisponibles > 0) {
             this.saltosDisponibles--;
         }
     }
 
-    // Método para recargar saltos al tocar el suelo
     public void recargarSaltos() {
         this.saltosDisponibles = 2;
     }
@@ -59,7 +67,6 @@ public class Jugador {
         if (sprite != null) {
             canvas.drawBitmap(sprite, x, y, null);
         } else {
-            // Cuadrado de emergencia si no hay imagen
             canvas.drawRect(x, y, x + ancho, y + alto, paint);
         }
     }

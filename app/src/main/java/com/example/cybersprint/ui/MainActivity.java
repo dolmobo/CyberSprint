@@ -43,6 +43,15 @@ public class MainActivity extends AppCompatActivity {
             finish();
         });
 
+        // ...
+        Button btnTienda = findViewById(R.id.btnTienda);
+
+        btnTienda.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ShopActivity.class);
+            startActivity(intent);
+        });
+// ...
+
         // 4. Cargamos los datos
         cargarDatosUsuario();
     }

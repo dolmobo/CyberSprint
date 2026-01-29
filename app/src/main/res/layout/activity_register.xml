@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="20dp"
             android:text="NUEVA CUENTA"
-            android:textColor="#FF4081"
+            android:textColor="#FF9800"
             android:textSize="32sp"
             android:textStyle="bold" />
 
@@ -50,7 +50,7 @@
             android:layout_width="300dp"
             android:layout_height="50dp"
             android:layout_marginBottom="12dp"
-            android:backgroundTint="#FF4081"
+            android:backgroundTint="#FF9800"
             android:text="CREAR CUENTA"
             android:textColor="#FFFFFF"
             android:textStyle="bold" />
