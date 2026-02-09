@@ -98,6 +98,33 @@ public class GestorDatos {
         }
     }
 
+    public void sumarPartidaJugada() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        // Usamos baseDatosRef (que apunta a "jugadores") y el UID del usuario
+        DatabaseReference partidasRef = baseDatosRef.child(user.getUid()).child("partidas_totales");
+
+        partidasRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                long partidas = 0;
+                if (snapshot.exists()) {
+                    try {
+                        partidas = Long.parseLong(snapshot.getValue().toString());
+                    } catch (Exception e) {
+                        partidas = 0;
+                    }
+                }
+                // Sumamos 1 y subimos el dato
+                partidasRef.setValue(partidas + 1);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+    }
+
     public void sumarMonedas(int cantidad) {
         monedasLocal += cantidad;
 
@@ -117,6 +144,39 @@ public class GestorDatos {
         } else {
             return "anonimo_error";
         }
+    }
+
+    public void guardarPuntosAcumulados(int puntosPartida, int saltosPartida) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        DatabaseReference usuarioRef = baseDatosRef.child(user.getUid());
+
+        usuarioRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                // 1. ACUMULAR PUNTUACIÓN TOTAL
+                long totalPuntos = 0;
+                if (snapshot.child("puntuacion_total").exists()) {
+                    try {
+                        totalPuntos = Long.parseLong(snapshot.child("puntuacion_total").getValue().toString());
+                    } catch (Exception e) {}
+                }
+                usuarioRef.child("puntuacion_total").setValue(totalPuntos + puntosPartida);
+
+                // 2. ACUMULAR SALTOS TOTALES
+                long totalSaltos = 0;
+                if (snapshot.child("saltos_totales").exists()) {
+                    try {
+                        totalSaltos = Long.parseLong(snapshot.child("saltos_totales").getValue().toString());
+                    } catch (Exception e) {}
+                }
+                usuarioRef.child("saltos_totales").setValue(totalSaltos + saltosPartida);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
     }
 
     // --- NUEVO MÉTODO PARA GUARDAR SALTOS ---

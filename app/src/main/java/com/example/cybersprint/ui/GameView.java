@@ -123,12 +123,14 @@ public class GameView extends SurfaceView implements Runnable {
         if (partida.gameState.equals("JUGANDO")) {
             partida.actualizarDificultad();
 
+            // --- Lógica del Fondo ---
             int velocidadFondo = (int) (partida.velocidadObstaculo * 0.7);
             fondoX1 -= velocidadFondo;
             fondoX2 -= velocidadFondo;
             if (fondoX1 + anchoPantalla < 0) fondoX1 = fondoX2 + anchoPantalla;
             if (fondoX2 + anchoPantalla < 0) fondoX2 = fondoX1 + anchoPantalla;
 
+            // --- Física del Jugador ---
             jugador.velocidadY += 2;
             jugador.y += jugador.velocidadY;
 
@@ -139,16 +141,19 @@ public class GameView extends SurfaceView implements Runnable {
                 jugador.recargarSaltos();
             }
 
+            // --- Generación de Obstáculos ---
             tiempoSpawn++;
             if (tiempoSpawn > proximoSpawn) {
                 int tipoObstaculo = 1;
                 if (generadorRandom.nextInt(100) < 40) tipoObstaculo = 2;
 
+                // Usamos TUS coordenadas originales
                 listaObstaculos.add(new Obstaculo(getContext(), anchoPantalla, 850, tipoObstaculo));
                 tiempoSpawn = 0;
                 calcularProximoSpawn();
             }
 
+            // --- Mover y Colisiones ---
             Iterator<Obstaculo> iterator = listaObstaculos.iterator();
             while (iterator.hasNext()) {
                 Obstaculo obs = iterator.next();
@@ -161,9 +166,16 @@ public class GameView extends SurfaceView implements Runnable {
 
                 if (partida.checkColision(obs)) {
                     partida.gameState = "GAMEOVER";
+
+                    // Guardamos todo en Firebase
                     GestorDatos.getInstance(getContext()).guardarNuevoRecord(jugador.puntuacion);
                     GestorDatos.getInstance(getContext()).sumarMonedas(jugador.puntuacion / 10);
                     GestorDatos.getInstance(getContext()).guardarEstadisticas(saltosPartida);
+
+                    // --- NUEVO: SUMAR PARTIDA JUGADA ---
+                    GestorDatos.getInstance(getContext()).sumarPartidaJugada();
+                    GestorDatos.getInstance(getContext()).guardarPuntosAcumulados(jugador.puntuacion, saltosPartida);
+
                     if (jugador.puntuacion > mejorRecord) mejorRecord = jugador.puntuacion;
                 }
             }
