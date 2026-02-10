@@ -14,6 +14,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.cybersprint.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -65,18 +70,44 @@ public class RegisterActivity extends AppCompatActivity {
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        // ¡Éxito!
+                        // 1. Obtener el usuario recién creado
                         FirebaseUser user = mAuth.getCurrentUser();
-                        Toast.makeText(RegisterActivity.this, "Cuenta creada: " + user.getEmail(), Toast.LENGTH_SHORT).show();
+                        if (user != null) {
+                            String uid = user.getUid();
 
-                        // Ir al Menú Principal
-                        Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
-                        // Esto borra el historial para que no pueda volver atrás al registro
-                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent);
-                        finish();
+                            // 2. PARSEAR EL EMAIL para obtener el nombre de usuario
+                            // Ejemplo: david@gmail.com -> David
+                            String username = email.split("@")[0];
+                            if (username.length() > 0) {
+                                username = username.substring(0, 1).toUpperCase() + username.substring(1).toLowerCase();
+                            }
+
+                            // 3. Preparar los datos iniciales para el Realtime Database
+                            DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference("jugadores").child(uid);
+
+                            Map<String, Object> datosIniciales = new HashMap<>();
+                            datosIniciales.put("username", username);
+                            datosIniciales.put("email", email);
+                            datosIniciales.put("record", 0);
+                            datosIniciales.put("monedas", 0);
+                            datosIniciales.put("partidas_totales", 0);
+                            datosIniciales.put("saltos_totales", 0);
+                            datosIniciales.put("puntuacion_total", 0);
+
+                            // 4. Guardar en la nube
+                            mDatabase.setValue(datosIniciales).addOnCompleteListener(dbTask -> {
+                                if (dbTask.isSuccessful()) {
+                                    Toast.makeText(RegisterActivity.this, "Cuenta y perfil creados", Toast.LENGTH_SHORT).show();
+                                }
+
+                                // Continuar al Menú Principal independientemente de si el registro de datos fue instantáneo
+                                Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                                finish();
+                            });
+                        }
                     } else {
-                        // Fallo
                         Toast.makeText(RegisterActivity.this, "Error: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });

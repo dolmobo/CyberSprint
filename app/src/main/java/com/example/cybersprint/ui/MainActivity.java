@@ -22,13 +22,25 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1. CARGAMOS EL DISEÑO XML QUE ACABAMOS DE HACER
+        // --- BLOQUE DE SEGURIDAD (EL PORTERO) ---
+        // Comprobamos si hay un usuario logueado. Si es null, lo echamos al Login.
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(intent);
+            finish(); // Importante: Cierra esta actividad para que no se quede detrás
+            return;   // Importante: Detiene la ejecución para que no cargue el resto del código
+        }
+        // ----------------------------------------
+
+        // 1. CARGAMOS EL DISEÑO XML
         setContentView(R.layout.activity_main);
 
         // 2. Buscamos los elementos
         Button btnJugar = findViewById(R.id.btnJugar);
         Button btnSalir = findViewById(R.id.btnSalir);
+        // Asegúrate de inicializar txtStats aquí para que no de error luego
         txtStats = findViewById(R.id.txtStats);
+        Button btnTienda = findViewById(R.id.btnTienda);
 
         // 3. Programamos los botones
         btnJugar.setOnClickListener(v -> {
@@ -43,16 +55,12 @@ public class MainActivity extends AppCompatActivity {
             finish();
         });
 
-        // ...
-        Button btnTienda = findViewById(R.id.btnTienda);
-
         btnTienda.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ShopActivity.class);
             startActivity(intent);
         });
-// ...
 
-        // 4. Cargamos los datos
+        // 4. Cargamos los datos (Ahora seguro que funcionará porque ya pasamos el filtro)
         cargarDatosUsuario();
     }
 
